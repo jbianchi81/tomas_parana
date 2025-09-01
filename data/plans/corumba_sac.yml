@@ -11,10 +11,10 @@ topology:
       output: data/results/corumba_sac_q.pdf
   save_variable:
     - var_id: 1
-      output: data/results/corumba_sac_p.csv
+      output: data/results/corumba_sac_p_obs.csv
       format: csv
     - var_id: 40
-      output: data/results/corumba_sac_q.csv
+      output: data/results/corumba_sac_q_obs.csv
       format: csv
   report_file: data/results/corumba_sac_report.json
   output_csv: data/results/corumba_sac_analysis.csv
@@ -30,7 +30,7 @@ topology:
       days: 1
     variables:
     - id: 40
-      series:
+      series: 
       - series_id: 15983
         tipo: puntual
         name: q_obs
@@ -130,6 +130,7 @@ procedures:
       no_check1: true
       no_check2: true
       max_npasos: 1
+      # rk2: true
     initial_states:
     - 100
     - 150
@@ -144,14 +145,15 @@ procedures:
     save_result: data/results/corumba_sac_pars.json
     max_iter: 150
     ranges:
-    - [1.0,4.0]
-    - [0.00001,0.1]
-    - [0.01,6]
-    - [1.0,3.5]
-    - [1.0,5.0]
+    - [1.0,4.0] # m1
+    - [0.00001,0.1] # c1
+    - [0.01,6] # mu
+    - [1.0,3.5] # m2
+    - [1.0,5.0] # m3
     limit: true
     objective_function: nse
     max_stagnations: 3
+    # no_improve_thr: 0.0001
 output_stats: data/results/corumba_sac_stats.json
 output_analysis: data/results/corumba_sac_analysis.json
 output_results: data/results/corumba_sac_results.json
