@@ -1,0 +1,164 @@
+# yaml-language-server: $schema=../../schemas/json/plan.json
+id: 99999
+name: corumba_sac
+forecast_date:
+    days: 0
+topology:
+  plot_variable:
+    - var_id: 1
+      output: data/results/corumba_sac_p.pdf
+    - var_id: 40
+      output: data/results/corumba_sac_q.pdf
+  save_variable:
+    - var_id: 1
+      output: data/results/corumba_sac_p.csv
+      format: csv
+    - var_id: 40
+      output: data/results/corumba_sac_q.csv
+      format: csv
+  report_file: data/results/corumba_sac_report.json
+  output_csv: data/results/corumba_sac_analysis.csv
+  timestart: "1996-11-18T03:00:00.000Z"
+  timeend: "2015-06-29T03:00:00.000Z"
+    # days: 15
+  time_offset:
+    hours: 9
+  nodes:
+  - id: 1
+    name: "UHE CORUMBÁ I BARRAMENTO"
+    time_interval: 
+      days: 1
+    variables:
+    - id: 40
+      series:
+      - series_id: 15983
+        tipo: puntual
+        name: q_obs
+      series_sim:
+      - series_id: 42300
+        tipo: puntual
+      output_series_id: 42300
+  - id: 2
+    name: "Cuenca UHE Corumbá I Barramento"
+    node_type: basin
+    time_interval: 
+      days: 1
+    variables:
+    - id: 1
+      series:
+      - series_id: 8298
+        tipo: areal
+        name: p cpc
+      - series_id: 8293
+        tipo: areal
+        name: p campo
+      - series_id: 8302
+        tipo: areal
+        name: p gfs
+      # series_prono:
+      # - series_id: 8301
+      #   tipo: areal
+      #   cal_id: 676
+      #   agg_func: sum
+      #   name: qpf gfs nomads
+      output_series_id: 8293
+    - id: 15
+      series:
+      - series_id: 8299
+        tipo: areal
+        name: etp wm
+      output_series_id: 8299
+    - id: 20
+      series:
+      - series_id: 8300
+        tipo: areal
+        name: sm smops
+      output_series_id: 8300
+procedures:
+- id: 1
+  save_results: data/results/corumba_sac_results.csv
+  function:
+    type: SacramentoSimplifiedFixedPars
+    boundaries:
+    - name: pma
+      node_variable:
+      - 2
+      - 1
+    - name: etp
+      node_variable:
+      - 2
+      - 15
+    - name: q_obs
+      node_variable:
+      - 1
+      - 40
+    - name: smc_obs
+      node_variable:
+      - 2
+      - 20
+    outputs:
+    - name: q_sim
+      node_variable:
+      - 1
+      - 40
+    - name: smc_sim
+      node_variable:
+      - 2
+      - 20
+    parameters:
+      x1_0: 0.0001
+      x2_0: 0.0001
+      m1: 1.41839
+      c1: 0.02
+      c2: 0.0001
+      c3: 0.0001
+      mu: 16.774767763275673
+      alfa: 0.0001
+      m2:  0.6034736616524212
+      m3:  6.617293885776557
+    fixed_parameters:
+      x1_0: 197.032
+      x2_0: 300.011
+      c2: 235.67
+      c3: 0.002449292779026246
+      alfa: 0.28390748964202395
+    extra_pars:
+      area: 28860203609
+      ae: 1
+      wp: 0.03
+      rho: 0.5
+      no_check1: true
+      no_check2: true
+      max_npasos: 1
+    initial_states:
+    - 100
+    - 150
+    - 0.1
+    - 0.1
+  calibration:
+    method: "downhill-simplex"
+    calibrate: true
+    calibration_period:
+    - "1996-11-18T03:00:00.000Z"
+    - "2011-01-01T03:00:00.000Z"
+    save_result: data/results/corumba_sac_pars.json
+    max_iter: 150
+    ranges:
+    - [1.0,4.0]
+    - [0.00001,0.1]
+    - [0.01,6]
+    - [1.0,3.5]
+    - [1.0,5.0]
+    limit: true
+    objective_function: nse
+    max_stagnations: 3
+output_stats: data/results/corumba_sac_stats.json
+output_analysis: data/results/corumba_sac_analysis.json
+output_results: data/results/corumba_sac_results.json
+output_sim_csv: data/results/corumba_sac_sim.csv
+# save_post: data/results/corumba_sac_post.json
+# save_response: data/results/corumba_sac_response.json
+save_variable_sim:
+  - var_id: 40
+    output: data/results/corumba_sac_q_sim.csv
+output_graph: data/results/corumba_sac_graph.png
