@@ -2,3 +2,7 @@
 data/series_q
 data/series_q_json
 data/results
+data/series_q_cargadas
+data/cuencas.geojson
+data/estaciones_props.geojson
+.vscode

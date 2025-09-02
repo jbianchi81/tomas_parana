@@ -3,15 +3,37 @@ import json
 
 # crear areas
 
-areas_geojson_file = "/home/alerta7/Downloads/cuencas_tomas_parana/cuencas_tomas_parana.geojson"
+areas_geojson_file = "data/cuencas.geojson"
 
 areas_geojson = json.load(open(areas_geojson_file))
+len(areas_geojson["features"])
 
-areas = client.createSites(areas_geojson, "areas", "geojson")
+estaciones_a5 = client.readEstaciones(tabla='red_ana_hidro')
+
+areas_ = []
+for a in areas_geojson["features"]:
+    id_externo = a["properties"]["nombre"]
+    for e in estaciones_a5:
+        if e["id_externo"] == id_externo:
+            print("se encontró estación %s" % e["nombre"])
+            areas_.append({
+                "nombre": e["nombre"],
+                "geom": a["geometry"],
+                "exutorio": e["geom"],
+                "exutorio_id": e["id"],
+                "activar": True,
+                "mostrar": False
+            })
+
+len(areas_)
+
+areas = client.createSites(areas_, "areas", "json")
+
+
 
 #
 
-area_ids = [area["id"] for area in areas]  # area_ids = [740, 741, 742, 743]
+area_ids = [area["id"] for area in areas]  # area_ids = [745, 746, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 767, 768, 769, 770, 771, 772, 773, 774, 775]
 
 # crear series areales
 
@@ -35,6 +57,7 @@ for area_id in area_ids:
     series = [ {**t, "area_id": area_id} for t in templates ]
     created_series.extend(client.createSeries(series, tipo="areal"))
 
+len(created_series)
 
 areas_arg = ",".join([str(a) for a in area_ids])
 
@@ -78,9 +101,9 @@ for area_id in area_ids:
 
 asociaciones = [{**template_asoc_gpm, "dest_series_id": s["id"]} for s in series_areal_gpm]
 
-json.dump(asociaciones, open("data/asociaciones_gpm.json", "w"), ensure_ascii=False)
+json.dump(asociaciones, open("data/asociaciones_gpm_2.json", "w"), ensure_ascii=False)
 
-"a5cli create asociacion data/asociaciones_gpm.json -o data/asociaciones_gpm_creadas.json --pretty" 
+"a5cli create asociacion data/asociaciones_gpm_2.json -o data/asociaciones_gpm_2_creadas.json --pretty" 
 
 # corre asociaciones
 
