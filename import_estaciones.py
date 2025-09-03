@@ -2,7 +2,7 @@ import json
 from a5client import client
 import pandas
 
-filename = "data/estaciones_props.geojson"
+filename = "data/estaciones/estaciones_props.geojson"
 
 estaciones = json.load(open(filename,encoding='utf-8'))
 
@@ -81,3 +81,39 @@ df_series_puntuales = pandas.DataFrame([{
 } for s in series_puntuales])
 
 df_series_puntuales.to_csv("data/series_puntuales.csv",index=False)
+
+
+estaciones_nuevas = [e for e in estaciones_a5 if e["id_externo"] in list(map(lambda f: f["properties"]["id_externo"],estaciones["features"])) ]
+
+len(estaciones_nuevas)
+estaciones_nuevas[0]
+
+series_q_inst = [{
+    "estacion_id": e["id"],
+    "var_id": 4,
+    "proc_id": 1,
+    "unit_id": 10
+} for e in estaciones_nuevas]
+
+creadas_inst = client.createSeries(series_q_inst)
+
+asoc_hmd = []
+for serie_source in creadas_inst:
+    series_dest = client.readSeries(tipo="puntual", var_id=40, proc_id=1, unit_id=10, estacion_id=serie_source["estacion"]["id"])
+    if not len(series_dest["rows"]):
+        print("No se encontro serie dest para estacion id %i" % serie_source["estacion"]["id"])
+        continue
+    serie_dest = series_dest["rows"][0]
+    asoc_hmd.append({
+        "source_tipo": "puntual",
+        "source_series_id": serie_source["id"],
+        "dest_tipo": "puntual",
+        "dest_series_id": serie_dest["id"],
+        "agg_func": "avg",
+        "dt": "1 day",
+        "t_offset": "00:00:00",
+        "precision": 2,
+        "habilitar": True
+    })
+
+json.dump(asoc_hmd, open("data/asoc_hmd.json","w"), indent=2)
