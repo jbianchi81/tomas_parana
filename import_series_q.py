@@ -10,13 +10,13 @@ from pytz import timezone
 files = os.listdir("data/series_q")
 
 for file in files:
-    id_externo = re.match(r"\d{8}",file)[0]
+    id_externo = re.match(r"\d{4}",file)[0]
     print("id_externo: %s" % id_externo)
-    series = client.readSeries(id_externo=id_externo, tabla="red_ana_hidro", var_id=40, proc_id=1)
-    if "rows" not in series or not len(series["rows"]):
+    series_qmd_obs = client.readSeries(id_externo=id_externo, tabla="alturas_bdhi", var_id=40, proc_id=1)
+    if "rows" not in series_qmd_obs or not len(series_qmd_obs["rows"]):
         print("No se encontró la serie de caudal medio diario de la estación con id externo = %s" % id_externo)
         continue
-    serie = series["rows"][0]
+    serie = series_qmd_obs["rows"][0]
     print("Se encontró la serie id = %i" % serie["id"])
     # lee csv
     data = pandas.read_csv(open("data/series_q/%s" % file), sep=r"\s+", names = ["day", "month", "year", "valor"], na_values={"valor":"-1.000000"})

@@ -2,18 +2,23 @@ import json
 from a5client import client
 import pandas
 
-filename = "data/estaciones/estaciones_props.geojson"
+filename = "data/estaciones4.geojson"
 
 estaciones = json.load(open(filename,encoding='utf-8'))
 
-estaciones_a5 = client.readEstaciones(tabla='red_ana_hidro')
+# estaciones_a5 = client.readEstaciones(tabla='red_ana_hidro')
+estaciones_a5 = client.readEstaciones(tabla='alturas_bdhi')
 len(estaciones_a5)
 estaciones_a5_id_externos = [ e["id_externo"] for e in estaciones_a5]
 
-estaciones_nuevas = [e for e in estaciones["features"] if e["properties"]["id_externo"] not in estaciones_a5_id_externos ]
+estaciones_nuevas = [e for e in estaciones["features"] if str(e["properties"]["id"]) not in estaciones_a5_id_externos ]
 
 estaciones_nuevas_a5 = [ {
-    **e["properties"],
+    "nombre": e["properties"]["nombre"],
+    "id_externo": str(e["properties"]["id"]),
+    "tabla": "red_ana_hidro",
+    "habilitar": True,
+    "tipo": "H",
     "geom": e["geometry"]
 } for e in estaciones_nuevas]
 
@@ -49,13 +54,12 @@ len(series_creadas_2)
 
 est = []
 for e in estaciones["features"]:
-    id_externo = e["properties"]["id_externo"]
+    id_externo = str(e["properties"]["id"])
     for es in estaciones_a5_:
         if id_externo == es["id_externo"]:
             print("found estacion %s" % es["nombre"])
             est.append({
-                "fid": e["properties"]["fid"],
-                "id": e["properties"]["id_externo"],
+                "id_externo": str(e["properties"]["id"]),
                 "x": e["geometry"]["coordinates"][0],
                 "y": e["geometry"]["coordinates"][1],
                 "nombre": es["nombre"],
@@ -65,7 +69,7 @@ for e in estaciones["features"]:
 
 df = pandas.DataFrame(est)
 
-df.to_csv("data/estaciones_2.csv")
+df.to_csv("data/estaciones_4.csv")
 
 # series to csv
 
@@ -80,8 +84,7 @@ df_series_puntuales = pandas.DataFrame([{
      "variable": s["var"]["nombre"]
 } for s in series_puntuales])
 
-df_series_puntuales.to_csv("data/series_puntuales.csv",index=False)
-
+df_series_puntuales.to_csv("data/series_puntuales3.csv",index=False)
 
 estaciones_nuevas = [e for e in estaciones_a5 if e["id_externo"] in list(map(lambda f: f["properties"]["id_externo"],estaciones["features"])) ]
 
@@ -117,3 +120,44 @@ for serie_source in creadas_inst:
     })
 
 json.dump(asoc_hmd, open("data/asoc_hmd.json","w"), indent=2)
+
+
+series_puntuales_all = []
+for estacion_id in [4958,4777,4778,4805,4811,8207,4491]:
+    series_puntuales_all.extend(client.readSeries("puntual",estacion_id=estacion_id,var_id=40)["rows"])
+
+len(series_puntuales_all)
+df_series_puntuales_all = pandas.DataFrame([{
+     "id": s["id"],
+     "estacion_id": s["estacion"]["id"],
+     "var_id": s["var"]["id"],
+     "proc_id": s["procedimiento"]["id"],
+     "unit_id": s["unidades"]["id"],
+     "variable": s["var"]["nombre"]
+} for s in series_puntuales_all])
+
+df_series_puntuales_all.to_csv("data/series_puntuales3.csv",index=False)
+
+
+## create qmd obs
+
+
+series_q_obs = [{
+    "estacion_id": e["estacion_id"],
+    "var_id": 40,
+    "proc_id": 1,
+    "unit_id": 10
+} for e in est]
+
+created_o = client.createSeries(series_q_obs)
+
+## create qmd sim
+
+series_q_sim = [{
+    "estacion_id": e["estacion_id"],
+    "var_id": 40,
+    "proc_id": 4,
+    "unit_id": 10
+} for e in est] #  in [4958,4777,4778,4805,4811,8207,4491]]
+
+created_s = client.createSeries(series_q_sim)
