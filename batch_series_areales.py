@@ -65,23 +65,26 @@ for area_id in area_ids:
 
 len(created_series)
 
+area_ids = range(797,863)
 areas_arg = ",".join([str(a) for a in area_ids])
+
 
 # poblar series areales
 
+bash_commands = open("tmp/generar_areales.sh","w")
 # CPC
 
-" && ".join(["bash pp_areal_to_db.sh -f 2 -s 19900101 -e 20000101 -U -a %s" % areas_arg,
+bash_commands.write(" && ".join(["bash pp_areal_to_db.sh -f 2 -s 19900101 -e 20000101 -U -a %s" % areas_arg,
 "bash pp_areal_to_db.sh -f 2 -s 20000101 -e 20100101 -U -a %s" % areas_arg,
 "bash pp_areal_to_db.sh -f 2 -s 20100101 -e 20200101 -U -a %s" % areas_arg,
-"bash pp_areal_to_db.sh -f 2 -s 20200101 -e 20250823 -U -a %s" % areas_arg])
+"bash pp_areal_to_db.sh -f 2 -s 20200101 -e 20251021 -U -a %s\n" % areas_arg]))
 
 # campo
 
-" && ".join(["bash pp_areal_to_db.sh -f 7 -s 19900101 -e 20000101 -U -a %s" % areas_arg,
+bash_commands.write(" && ".join(["bash pp_areal_to_db.sh -f 7 -s 19900101 -e 20000101 -U -a %s" % areas_arg,
 "bash pp_areal_to_db.sh -f 7 -s 20000101 -e 20100101 -U -a %s" % areas_arg,
 "bash pp_areal_to_db.sh -f 7 -s 20100101 -e 20200101 -U -a %s" % areas_arg,
-"bash pp_areal_to_db.sh -f 7 -s 20200101 -e 20250823 -U -a %s" % areas_arg])
+"bash pp_areal_to_db.sh -f 7 -s 20200101 -e 20251021 -U -a %s\n" % areas_arg]))
 
 
 # GFS
@@ -107,21 +110,22 @@ for area_id in area_ids:
 
 asociaciones = [{**template_asoc_gpm, "dest_series_id": s["id"]} for s in series_areal_gpm]
 
-json.dump(asociaciones, open("data/asociaciones_gpm_4.json", "w"), ensure_ascii=False)
+json.dump(asociaciones, open("data/asociaciones_gpm_5.json", "w"), ensure_ascii=False)
 
-"a5cli create asociacion data/asociaciones_gpm_4.json -o data/asociaciones_gpm_4_creadas.json" 
+bash_commands.write("a5cli create asociacion data/asociaciones_gpm_5.json -o data/asociaciones_gpm_4_creadas.json\n")
 
 # corre asociaciones
 
-"node crud_procedures.js run-asoc 2020-01-01 2025-10-07 source_tipo=raster source_series_id=13 %s" % " ".join([ "dest_estacion_id=%i" % id for id in area_ids])
+bash_commands.write("node crud_procedures.js run-asoc 2020-01-01 2025-10-07 source_tipo=raster source_series_id=13 %s" % " ".join([ "dest_estacion_id=%i" % id for id in area_ids]))
 
 # WM (ETP)
 
-" && ".join(["bash pp_areal_to_db.sh -f 3 -s 19900101 -e 20000101 -U -a %s" % areas_arg, 
+bash_commands.write(" && ".join(["bash pp_areal_to_db.sh -f 3 -s 19900101 -e 20000101 -U -a %s" % areas_arg, 
 "bash pp_areal_to_db.sh -f 3 -s 20000101 -e 20100101 -U -a %s" % areas_arg,
 "bash pp_areal_to_db.sh -f 3 -s 20100101 -e 20200101 -U -a %s" % areas_arg,
-"bash pp_areal_to_db.sh -f 3 -s 20200101 -e 20300101 -U -a %s" % areas_arg])
+"bash pp_areal_to_db.sh -f 3 -s 20200101 -e 20300101 -U -a %s\n" % areas_arg]))
 
+bash_commands.close()
 
 series_areal_todas= []
 for area_id in [778,779,780,781,782,783,784]:
