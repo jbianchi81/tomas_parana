@@ -6,3 +6,4 @@ data/series_q_cargadas
 data/cuencas.geojson
 data/estaciones_props.geojson
 .vscode
+tmp
