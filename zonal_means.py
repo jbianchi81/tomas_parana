@@ -18,8 +18,9 @@ defaults = {
     "zones_file": "data/areas_pluvio.tif",
     "geom_file": "data/areas_pluvio.geojson",
     "offset_hours": 9,
-    "file_pattern": r".+_(\d{4})_v\d\.\d\.nc",
-    "a5_url": "http://10.10.9.14:5008"
+    "file_pattern": r".+_(\d{4})(_v\d\.\d)?\.nc",
+    "a5_url": "http://10.10.9.14:5008",
+    "var_id": 1
 }
 
 client.url = defaults["a5_url"]
@@ -93,8 +94,8 @@ def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, met
 
     print("✅ Done.")
 
-def getSeries(fuentes_id : int):
-    series_areales = pandas.DataFrame(client.readSeries("areal",fuentes_id=fuentes_id, no_metadata=True)["rows"])
+def getSeries(fuentes_id : int, var_id: int):
+    series_areales = pandas.DataFrame(client.readSeries("areal",fuentes_id=fuentes_id, var_id=var_id, no_metadata=True)["rows"])
     series_areales.set_index("estacion_id", inplace=True)
     return series_areales
 
@@ -117,11 +118,12 @@ def parseCSVFile(
 def readDir(
         dirname : str, year : int, 
         fuentes_id : int,
+        var_id : int,
         dt: datetime.timedelta,
         output : str = None,
         offset_hours : int = 0,
         upload : bool = False):
-    series_areales : pandas.DataFrame = getSeries(fuentes_id)
+    series_areales : pandas.DataFrame = getSeries(fuentes_id, var_id)
     obs = [] # pandas.DataFrame(columns={"series_id": int, "valor": float, "timestart": datetime, "timeend": datetime})
     files = os.listdir(dirname)
     for file in files:
@@ -167,7 +169,7 @@ def run(args : argparse.Namespace):
     try:
         if not args.skip_grass_process:
             zonalMeans(args.zones_file, args.cover_file, args.csvdir, args.coef, args.method)
-        readDir(args.csvdir, args.year, args.fuentes_id, args.dt, args.output, args.offset_hours, args.upload)
+        readDir(args.csvdir, args.year, args.fuentes_id, args.var_id, args.dt, args.output, args.offset_hours, args.upload)
     finally:
         if is_tmpdir:
             # --- Clean up temporary directory ---
@@ -180,6 +182,7 @@ if __name__ == "__main__":
     parser.add_argument("output", type=str)
     parser.add_argument("-y","--year", type=int)
     parser.add_argument("-f","--fuentes_id", type=int, required=True)
+    parser.add_argument("-v","--var_id", type=int, default=defaults["var_id"])
     parser.add_argument("-D","--csvdir", type=str)
     parser.add_argument("-z","--zones_file", type=str, default=defaults["zones_file"])
     parser.add_argument("-d","--dt", type=datetime.timedelta, default=defaults["dt"])
@@ -199,15 +202,16 @@ if __name__ == "__main__":
     if not os.path.exists(args.cover_file):
         raise ValueError("File not found: %s" % args.cover_file)
     if os.path.isdir(args.cover_file):
-        print("Iterating content of: %s" % args.cover_file)
-        files = os.listdir(args.cover_file)
+        cover_dir = args.cover_file
+        print("Iterating content of: %s" % cover_dir)
+        files = os.listdir(cover_dir)
         for file in sorted(files):
             match = re.search(args.file_pattern, file)
             if not match:
                 print("Filename '%s' does not match pattern. Skipping" % file)
                 continue
             args.__setattr__("year", int(match.group(1)))
-            args.__setattr__("cover_file", "%s/%s" % (args.cover_file, file))
+            args.__setattr__("cover_file", "%s/%s" % (cover_dir, file))
             print("Processing file %s, year %i" % (args.cover_file, args.year))
             run(args)
     else:
