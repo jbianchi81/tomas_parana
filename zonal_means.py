@@ -52,7 +52,7 @@ def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, met
     gs.run_command("r.in.gdal", input=zones_file, output="areas_pluvio", overwrite=True, flags="o")
 
     # Convert to int and mask out 0
-    gs.mapcalc("areas = int(areas_pluvio)", overwrite=True)
+    gs.mapcalc("areas = int( areas_pluvio )", overwrite=True)
     gs.run_command("r.null", map="areas", setnull=0)
 
     # --- Load cover raster (multiband) ---
