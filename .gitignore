@@ -7,3 +7,5 @@ data/cuencas.geojson
 data/estaciones_props.geojson
 .vscode
 tmp
+config
+data/WGS84

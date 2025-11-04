@@ -1,7 +1,8 @@
 import os
 import datetime
 import pandas
-from a5client import client
+from a5client import client, Crud
+import configparser
 import argparse
 #!/usr/bin/env python3
 import os
@@ -18,12 +19,17 @@ defaults = {
     "zones_file": "data/areas_pluvio.tif",
     "geom_file": "data/areas_pluvio.geojson",
     "offset_hours": 9,
-    "file_pattern": r".+_(\d{4})(_v\d\.\d)?\.nc",
-    "a5_url": "http://10.10.9.14:5008",
-    "var_id": 1
+    "file_pattern": r".+_(\d{4})(_v\d\.\d)?(_.+)?\.nc$",
+    # "a5_url": "http://10.10.9.14:5008",
+    "var_id": 1,
+    "upload_batch": 2500 
 }
 
-client.url = defaults["a5_url"]
+config = configparser.ConfigParser()
+config.read("config/.a5client.ini")
+client = Crud(config["server"]["url"], config["server"]["token"])
+
+# client.url = defaults["a5_url"]
 
 def createZonesMap(geom_output : str, zones_file : str, filter: dict={}):
     areas = client.readAreas(**filter, format="geojson")
@@ -122,7 +128,8 @@ def readDir(
         dt: datetime.timedelta,
         output : str = None,
         offset_hours : int = 0,
-        upload : bool = False):
+        upload : bool = False,
+        upload_batch : int = 2500):
     series_areales : pandas.DataFrame = getSeries(fuentes_id, var_id)
     obs = [] # pandas.DataFrame(columns={"series_id": int, "valor": float, "timestart": datetime, "timeend": datetime})
     files = os.listdir(dirname)
@@ -140,7 +147,7 @@ def readDir(
         #     client.createObservaciones(observaciones, series_id, tipo="areal")
         i=0
         while i < len(allobs):
-            y = i + 10000
+            y = i + upload_batch
             print("Uploading observaciones %i to %i " % (i, min(y,len(allobs))))
             created = client.createObservaciones(allobs[i:y], tipo="areal")
             print("Created %i observaciones" % len(created))
@@ -194,7 +201,7 @@ if __name__ == "__main__":
     parser.add_argument("-Z","--create_zones_map",action="store_true")
     parser.add_argument("--geom_file", type=str, default=defaults["geom_file"])
     parser.add_argument("-p","--file_pattern", type=str, default=defaults["file_pattern"])
-    parser.add_argument("-U","--a5_url", type=str, default=defaults["a5_url"])
+    parser.add_argument("-U","--a5_url", type=str, default=config["server"]["url"])
     args = parser.parse_args()
     client.url = args.a5_url
     if args.create_zones_map:
