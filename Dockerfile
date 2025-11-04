@@ -32,8 +32,14 @@ RUN sed -i 's|http://|https://|g' /etc/apt/sources.list.d/ubuntu.sources && \
         python3-pip \
         python3-gdal \
         gdal-bin \
-        nano
+        nano \
+        gpg \
+        software-properties-common
         # && rm -rf /var/lib/apt/lists/*
+
+# Add ubuntugis-unstable PPA manually via HTTPS
+#RUN  echo "deb https://ppa.launchpadcontent.net/ubuntugis/ubuntugis-unstable/ubuntu noble main" > /etc/apt/sources.list.d/ubuntugis-unstable.list && \
+#     echo "deb-src https://ppa.launchpadcontent.net/ubuntugis/ubuntugis-unstable/ubuntu noble main" >> /etc/apt/sources.list.d/ubuntugis-unstable.list
 
 # Add the official Ubuntugis and GRASS stable PPAs
 RUN add-apt-repository -y ppa:ubuntugis/ubuntugis-unstable && \
@@ -55,7 +61,7 @@ WORKDIR /data
 RUN grass --version
 
 # Verify environment
-# RUN python --version && pip list
+RUN python --version && pip list
 
 WORKDIR /
 COPY zonal_means.py .

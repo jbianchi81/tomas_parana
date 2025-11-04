@@ -4,7 +4,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - /mnt:/mnt:ro
       - ./data:/data
-      - ./tmp:/tmp
       - ./config:/config
+      - /mount/POOL3:/mnt/POOL3:ro
