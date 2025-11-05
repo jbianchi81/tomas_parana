@@ -29,7 +29,7 @@ location="data/WGS84/cmip1"
 # Execute everything inside the container
 # --------------------------------------------------------------------
 
-docker compose run --rm \
+docker compose run --rm -T \
   -e LOCATION="$location" \
   -e TEMPLATE="$template" \
   -e START="$start" \
@@ -38,7 +38,7 @@ docker compose run --rm \
   -e FUENTES_ID="$fuentes_id" \
   -e VAR_ID="$var_id" \
   -e COEF="$coef" \
-  "$service" bash -c <<'EOF'
+  "$service" bash -s <<'EOF'
 set -euo pipefail
 
 mapset=session_\$(date +%s)
