@@ -41,7 +41,7 @@ docker compose run --rm -T \
   "$service" bash -s <<'EOF'
 set -euo pipefail
 
-mapset=session_\$(date +%s)
+mapset=session_$(date +%s)
 
 echo "--- Creating mapset: $mapset"
 grass "$LOCATION/PERMANENT" --exec g.mapset -c mapset="$mapset"
