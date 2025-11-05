@@ -14,7 +14,7 @@ import re
 
 defaults = {
     "dt": datetime.timedelta(days=1),
-    "coef": 86400,
+    "coef": 1, # 86400,
     "method": "average",
     "zones_file": "data/areas_pluvio.tif",
     "geom_file": "data/areas_pluvio.geojson",
@@ -112,7 +112,7 @@ def parseCSVFile(
         offset_hours : int = 0):
     print("parseando %s" % filepath)
     doy = int(filepath.split(".")[1])
-    date = datetime.datetime(year,1,1) + datetime.timedelta(days=doy - 1, hours=offset_hours)
+    date = datetime.datetime(year,1,1, offset_hours) + datetime.timedelta(days=doy - 1)
     data = pandas.read_csv(filepath)
     data.columns=["estacion_id","valor","cell_count"]
     data.set_index("estacion_id", inplace=True)
@@ -122,7 +122,8 @@ def parseCSVFile(
     return joined[["series_id", "valor", "timestart", "timeend"]]
 
 def readDir(
-        dirname : str, year : int, 
+        dirname : str,
+        year : int, 
         fuentes_id : int,
         var_id : int,
         dt: datetime.timedelta,
@@ -176,7 +177,7 @@ def run(args : argparse.Namespace):
     try:
         if not args.skip_grass_process:
             zonalMeans(args.zones_file, args.cover_file, args.csvdir, args.coef, args.method)
-        readDir(args.csvdir, args.year, args.fuentes_id, args.var_id, args.dt, args.output, args.offset_hours, args.upload)
+        readDir(args.csvdir, args.year, args.fuentes_id, args.var_id, args.dt, args.output, args.offset_hours, args.upload, args.upload_batch)
     finally:
         if is_tmpdir:
             # --- Clean up temporary directory ---
@@ -202,6 +203,7 @@ if __name__ == "__main__":
     parser.add_argument("--geom_file", type=str, default=defaults["geom_file"])
     parser.add_argument("-p","--file_pattern", type=str, default=defaults["file_pattern"])
     parser.add_argument("-U","--a5_url", type=str, default=config["server"]["url"])
+    parser.add_argument("-b","--upload_batch", type=int, default=defaults["upload_batch"])   
     args = parser.parse_args()
     client.url = args.a5_url
     if args.create_zones_map:
