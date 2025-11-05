@@ -49,7 +49,7 @@ for year in $(seq $START $END); do
     echo "--- Processing year: $year"
     ncfile="${TEMPLATE//%Y/$year}"
     grass "$LOCATION/$mapset" --exec /opt/venv/bin/python zonal_means.py \
-        "$ncfile" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "COEF" -u
+        "$ncfile" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "$COEF" -u
 done
 
 echo "--- Deleting mapset: $mapset"
