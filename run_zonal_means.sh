@@ -29,7 +29,7 @@ location="data/WGS84/cmip1"
 # Execute everything inside the container
 # --------------------------------------------------------------------
 
-docker compose run --rm -T \
+docker compose run --name tomas_parana-app-run-f$fuentes_id-v$var_id-s$start-e$end  --rm -T \
   -e LOCATION="$location" \
   -e TEMPLATE="$template" \
   -e START="$start" \
