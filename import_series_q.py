@@ -7,10 +7,16 @@ import json
 
 from pytz import timezone
 
-files = os.listdir("data/series_q")
+###### PARAMS ##########
+input_dir = "data/series_q_arg_md"
+output_dir = "data/series_q_arg_md_json"
+client.url = "http://10.10.9.14:5008"
+########################
+
+files = os.listdir(input_dir)
 
 for file in files:
-    id_externo = re.match(r"\d{4}",file)[0]
+    id_externo = re.match(r"\d+",file)[0]
     print("id_externo: %s" % id_externo)
     series_qmd_obs = client.readSeries(id_externo=id_externo, tabla="alturas_bdhi", var_id=40, proc_id=1)
     if "rows" not in series_qmd_obs or not len(series_qmd_obs["rows"]):
@@ -19,7 +25,7 @@ for file in files:
     serie = series_qmd_obs["rows"][0]
     print("Se encontró la serie id = %i" % serie["id"])
     # lee csv
-    data = pandas.read_csv(open("data/series_q/%s" % file), sep=r"\s+", names = ["day", "month", "year", "valor"], na_values={"valor":"-1.000000"})
+    data = pandas.read_csv(open("%s/%s" % (input_dir,file)), sep=r"\s+", names = ["day", "month", "year", "valor"], na_values={"valor":"-1.000000"})
     # borra nulos
     data.dropna(inplace=True)
     # concatena fecha
@@ -30,8 +36,7 @@ for file in files:
     data["timestart"] = data["timestart"].dt.strftime("%Y-%m-%dT%H:%M:%S%z")
     created = client.createObservaciones(data[["timestart","valor","series_id","tipo"]].to_dict(orient="records"), serie["id"], timeSupport = timedelta(days=1))
     # created = client.createObservaciones(data[["timestart","valor","series_id","tipo"]], serie["id"], timeSupport = timedelta(days=1))
-    created
-    json.dump(data[["timestart","valor","series_id","tipo"]].to_dict(orient="records"), open("data/series_q_json/%i.json" % serie["id"],"w", encoding="utf-8"), indent=2)
+    json.dump(data[["timestart","valor","series_id","tipo"]].to_dict(orient="records"), open("%s/%i.json" % (output_dir, serie["id"]),"w", encoding="utf-8"), indent=2)
 
 
 

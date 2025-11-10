@@ -106,7 +106,8 @@ def getSeries(fuentes_id : int, var_id: int):
     return series_areales
 
 def parseCSVFile(
-        filepath : str, year : int, 
+        filepath : str,
+        year : int, 
         series_areales : pandas.DataFrame, 
         dt : datetime.timedelta,
         offset_hours : int = 0):

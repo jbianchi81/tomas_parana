@@ -6,4 +6,4 @@ services:
     volumes:
       - ./data:/data
       - ./config:/config
-      - /mount/POOL3:/mnt/POOL3:ro
+      - /mount/POOL3:/mount/POOL3:ro
