@@ -6,11 +6,11 @@ set -euo pipefail
 # Creates a temporary mapset, runs per-year processing, cleans up
 # --------------------------------------------------------------------
 # Usage:
-#   ./run_zonal_means.sh <template> <start> <end> <output> <fuentes_id> <var_id> <coef>
+#   ./run_zonal_means.sh <template> <start> <end> <output> <fuentes_id> <var_id> <coef> <zones_file>
 #
 # --------------------------------------------------------------------
 
-if [ "$#" -ne 7 ]; then
+if [ "$#" -ne 8 ]; then
   echo "Usage: $0 <template> <start> <end> <output> <fuentes_id> <var_id> <coef> <zones_file>"
   exit 1
 fi
