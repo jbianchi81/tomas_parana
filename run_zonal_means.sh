@@ -11,7 +11,7 @@ set -euo pipefail
 # --------------------------------------------------------------------
 
 if [ "$#" -ne 7 ]; then
-  echo "Usage: $0 <template> <start> <end> <output> <fuentes_id> <var_id> <coef>"
+  echo "Usage: $0 <template> <start> <end> <output> <fuentes_id> <var_id> <coef> <zones_file>"
   exit 1
 fi
 
@@ -22,6 +22,7 @@ output="$4"
 fuentes_id="$5"
 var_id="$6"
 coef="$7"
+zones_file="$8"
 
 service="app"
 location="data/WGS84/cmip1"
@@ -38,6 +39,7 @@ docker compose run --name tomas_parana-app-run-f$fuentes_id-v$var_id-s$start-e$e
   -e FUENTES_ID="$fuentes_id" \
   -e VAR_ID="$var_id" \
   -e COEF="$coef" \
+  -e ZONES_FILE="$zones_file" \
   "$service" bash -s <<'EOF'
 set -euo pipefail
 
@@ -49,7 +51,7 @@ for year in $(seq $START $END); do
     echo "--- Processing year: $year"
     ncfile="${TEMPLATE//%Y/$year}"
     grass "$LOCATION/$mapset" --exec /opt/venv/bin/python zonal_means.py \
-        "$ncfile" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "$COEF" -u
+        "$ncfile" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "$COEF" -z $ZONES_FILE -u
 done
 
 echo "--- Deleting mapset: $mapset"
