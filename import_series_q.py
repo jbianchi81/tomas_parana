@@ -10,7 +10,7 @@ from pytz import timezone
 ###### PARAMS ##########
 input_dir = "data/series_q_arg_md"
 output_dir = "data/series_q_arg_md_json"
-client.url = "http://10.10.9.14:5008"
+client.url = "http://10.10.9.14:3005"
 ########################
 
 files = os.listdir(input_dir)

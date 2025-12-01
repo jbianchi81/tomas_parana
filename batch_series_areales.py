@@ -3,7 +3,7 @@ import json
 
 # crear areas
 
-areas_geojson_file = "data/cuencas4.geojson"
+areas_geojson_file = "data/restantes_geo.geojson"
 
 areas_geojson = json.load(open(areas_geojson_file))
 len(areas_geojson["features"])
@@ -34,11 +34,19 @@ len(areas_)
 
 areas = client.createSites(areas_, "areas", "json")
 
+# sin exutorio
+areas_ = [{
+    "nombre": a["properties"]["nombre"],
+    "geom": a["geometry"],
+    "activar": True,
+    "mostrar": False
+} for a in areas_geojson["features"]]
 
+areas = client.createSites(areas_, "areas", "json")
 
 #
 
-area_ids = [area["id"] for area in areas]  # area_ids = [745, 746, 747, 748, 749, 750, 751, 752, 753, 754, 755, 756, 757, 758, 759, 760, 761, 762, 763, 764, 765, 766, 767, 768, 769, 770, 771, 772, 773, 774, 775]
+area_ids = [area["id"] for area in areas]  # area_ids = [905, 906, 907, 908, 909, 910, 911, 912, 913, 914, 915, 916, 917, 918, 919, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045, 1046, 1047]
 
 # crear series areales
 
@@ -65,7 +73,7 @@ for area_id in area_ids:
 
 len(created_series)
 
-area_ids = range(797,863)
+# area_ids = range(797,863)
 areas_arg = ",".join([str(a) for a in area_ids])
 
 
@@ -154,3 +162,60 @@ df.to_csv("data/series_areales4.csv",index=False)
 #     } for a in areas
 # ])
 # df.to_csv("data/areas_3.csv")
+
+# areas 2 geojson
+
+features = [{
+        "type": "Feature",
+        "properties": { "nombre": a["nombre"], "id": a["id"]}, 
+        "geometry": a["geom"]
+    } for a in areas]
+
+agj = open("data/areas_faltantes_con_id.geojson","w")
+json.dump({
+    "type": "FeatureCollection",
+    "name": "areas_faltantes_con_id",
+    "crs": {
+        "type": "name",
+        "properties": {
+            "name": "EPSG:4326"
+        }
+    },
+    "features": features
+},agj, indent=2, ensure_ascii=False)
+agj.close()
+
+### series areales modelos
+
+fuentes_ids = range(53,73)
+
+area_ids = [905, 906, 907, 908, 909, 910, 911, 912, 913, 914, 915, 916, 917, 918, 919, 920, 921, 922, 923, 924, 925, 926, 927, 928, 929, 930, 931, 932, 933, 934, 935, 936, 937, 938, 939, 940, 941, 942, 943, 944, 945, 946, 947, 948, 949, 950, 951, 952, 953, 954, 955, 956, 957, 958, 959, 960, 961, 962, 963, 964, 965, 966, 967, 968, 969, 970, 971, 972, 973, 974, 975, 976, 977, 978, 979, 980, 981, 982, 983, 984, 985, 986, 987, 988, 989, 990, 991, 992, 993, 994, 995, 996, 997, 998, 999, 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015, 1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025, 1026, 1027, 1028, 1029, 1030, 1031, 1032, 1033, 1034, 1035, 1036, 1037, 1038, 1039, 1040, 1041, 1042, 1043, 1044, 1045, 1046, 1047]
+
+
+series_areales_pr_modelos = [
+    {
+        "tipo": "areal",
+        "fuentes_id": fuentes_id,
+        "area_id": area_id,
+        "var_id": 1,
+        "unit_id": 22,
+        "proc_id": 4
+    } for area_id in area_ids for fuentes_id in fuentes_ids
+]
+
+client.createSeries(series_areales_pr_modelos, tipo="areal")
+
+series_areales_etp_modelos = [
+    {
+        "tipo": "areal",
+        "fuentes_id": fuentes_id,
+        "area_id": area_id,
+        "var_id": 15,
+        "unit_id": 22,
+        "proc_id": 4
+    } for area_id in area_ids for fuentes_id in fuentes_ids
+]
+
+client.createSeries(series_areales_etp_modelos, tipo="areal")
+
+
