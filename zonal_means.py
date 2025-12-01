@@ -137,7 +137,12 @@ def readDir(
     files = os.listdir(dirname)
     for file in files:
         filepath = "%s/%s" % (dirname, file)
-        obs.append(parseCSVFile(filepath, year, series_areales, dt, offset_hours))
+        try:
+            rows = parseCSVFile(filepath, year, series_areales, dt, offset_hours)
+            obs.append(rows)
+        except Exception as e:
+            print(f"An error occurred: {type(e).__name__} – {e}")
+            print("Error al parsear csv %s. Salteando." % filepath)
     allobs = pandas.concat(obs, ignore_index=True)
     allobs.dropna(inplace=True)
     if output is not None:
