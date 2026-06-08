@@ -142,7 +142,8 @@ def readDir(
         upload : bool = False,
         upload_batch : int = 2500,
         dates_file : Optional[str] = None,
-        roundTo : Optional[int] = None):
+        roundTo : Optional[int] = None,
+        cor_id : Optional[int] = None):
     series_areales : pandas.DataFrame = getSeries(fuentes_id, var_id)
     obs = [] # pandas.DataFrame(columns={"series_id": int, "valor": float, "timestart": datetime, "timeend": datetime})
     
@@ -173,16 +174,22 @@ def readDir(
     if output is not None:
         allobs.to_json(output,orient="records", date_format='iso', indent=2)
     if upload:
-        # for series_id, group in allobs.groupby("series_id"):
-        #     observaciones = group.set_index("timestart")
-        #     print("Uploading series_id: %i" % series_id)
-        #     client.createObservaciones(observaciones, series_id, tipo="areal")
         i=0
         while i < len(allobs):
             y = i + upload_batch
             print("Uploading observaciones %i to %i " % (i, min(y,len(allobs))))
-            created = client.createObservaciones(allobs[i:y], tipo="areal")
-            print("Created %i observaciones" % len(created))
+
+            if cor_id is not None:
+                created = client.createPronosticos(
+                    cor_id,
+                    allobs[i:y],
+                    tipo="areal")
+                print("Created %i pronosticos" % len(created))
+            else:
+                created = client.createObservaciones(
+                    allobs[i:y], 
+                    tipo="areal")
+                print("Created %i observaciones" % len(created))
             i = y
     return allobs
 
@@ -224,7 +231,8 @@ def run(args : argparse.Namespace):
             args.upload, 
             args.upload_batch, 
             args.dates_file,
-            args.round_to)
+            args.round_to,
+            args.cor_id)
     finally:
         if is_tmpdir:
             # --- Clean up temporary directory ---
@@ -253,6 +261,7 @@ if __name__ == "__main__":
     parser.add_argument("-b","--upload_batch", type=int, default=defaults["upload_batch"])   
     parser.add_argument("-a", "--dates_file", type=str)
     parser.add_argument("-r","--round_to", type=int)
+    parser.add_argument("-C","--cor_id", type=int)
     args = parser.parse_args()
     client.url = args.a5_url
     if args.create_zones_map:

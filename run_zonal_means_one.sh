@@ -6,12 +6,12 @@ set -euo pipefail
 # Creates a temporary mapset, runs per-year processing, cleans up
 # --------------------------------------------------------------------
 # Usage:
-#   ./run_zonal_means_one.sh <cover_file> <output> <fuentes_id> <var_id> <coef> <zones_file> <dt> <round_to> <dates_file> 
+#   ./run_zonal_means_one.sh <cover_file> <output> <fuentes_id> <var_id> <coef> <zones_file> <dt> <round_to> <dates_file> <cor_id>
 #
 # --------------------------------------------------------------------
 
-if [ "$#" -ne 9 ]; then
-  echo "Usage: $0 <cover_file> <output> <fuentes_id> <var_id> <coef> <zones_file> <dt> <round_to> <dates_file> "
+if [ "$#" -ne 10 ]; then
+  echo "Usage: $0 <cover_file> <output> <fuentes_id> <var_id> <coef> <zones_file> <dt> <round_to> <dates_file> <cor_id>"
   exit 1
 fi
 
@@ -24,6 +24,7 @@ zones_file="$6"
 dt="$7"
 round_to="$8"
 dates_file="$9"
+cor_id="${10}"
 
 service="app"
 location="data/ZONALMEANS"
@@ -43,6 +44,7 @@ docker compose run --name tomas_parana-app-run-f$fuentes_id-v$var_id-t$ts --rm -
   -e DT="$dt" \
   -e ROUND_TO="$round_to" \
   -e DATES_FILE="$dates_file" \
+  -e COR_ID="$cor_id" \
   "$service" bash -s <<'EOF'
 set -euo pipefail
 
@@ -52,7 +54,7 @@ echo "--- Creating mapset: $mapset"
 grass "$LOCATION/PERMANENT" --exec g.mapset -c mapset="$mapset"
 echo "--- Processing file: $COVER_FILE"
 grass "$LOCATION/$mapset" --exec /opt/venv/bin/python zonal_means.py \
-    "$COVER_FILE" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "$COEF" -z "$ZONES_FILE" -d "$DT" -r "$ROUND_TO" -a "$DATES_FILE"
+    "$COVER_FILE" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "$COEF" -z "$ZONES_FILE" -d "$DT" -r "$ROUND_TO" -a "$DATES_FILE" -u -C "$COR_ID"
 
 echo "--- Deleting mapset: $mapset"
 rm -rf "$LOCATION/$mapset"
