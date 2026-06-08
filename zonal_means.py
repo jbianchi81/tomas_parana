@@ -1,19 +1,21 @@
+#!/usr/bin/env python3
 import os
 import datetime
 import pandas
 from a5client import client, Crud
 import configparser
 import argparse
-#!/usr/bin/env python3
 import os
 import tempfile
 import shutil
 import json
 import subprocess
 import re
+from typing import Optional
+import isodate
 
 defaults = {
-    "dt": datetime.timedelta(days=1),
+    "dt": isodate.parse_duration("P1D"),
     "coef": 1, # 86400,
     "method": "average",
     "zones_file": "data/areas_pluvio.tif",
@@ -62,6 +64,9 @@ def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, met
     gs.run_command("r.mapcalc", expression="areas = int( areas_pluvio )", overwrite=True)
     gs.run_command("r.null", map="areas", setnull=0)
 
+    # --- Remove old cover files ---
+    gs.run_command("g.remove",type="raster",pattern="cover.*",flags="f")
+
     # --- Load cover raster (multiband) ---
     gs.run_command("r.in.gdal", input=cover_file, output="cover", overwrite=True, flags="o")
 
@@ -70,7 +75,7 @@ def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, met
 
     for cover_map in sorted(cover_maps):
         print(f"Processing {cover_map} ...")
-        map_index = cover_map.split(".")[-1]  # e.g. 'cover.12' → '12'
+        map_index = "%05d" % int(cover_map.split(".")[-1])  # e.g. 'cover.12' → '12'
 
         # Rescale
         gs.run_command("r.mapcalc", expression=f"cover_scaled = {coef} * {cover_map}", overwrite=True)
@@ -110,16 +115,20 @@ def parseCSVFile(
         year : int, 
         series_areales : pandas.DataFrame, 
         dt : datetime.timedelta,
-        offset_hours : int = 0):
+        offset_hours : int = 0,
+        date : Optional[datetime.datetime]=None,
+        roundTo : Optional[int]=None):
     print("parseando %s" % filepath)
     doy = int(filepath.split(".")[1])
-    date = datetime.datetime(year,1,1, offset_hours) + datetime.timedelta(days=doy - 1)
+    date = date or datetime.datetime(year,1,1, offset_hours) + datetime.timedelta(days=doy - 1)
     data = pandas.read_csv(filepath)
     data.columns=["estacion_id","valor","cell_count"]
     data.set_index("estacion_id", inplace=True)
     joined = data.join(series_areales)
     joined["timestart"] = date
     joined["timeend"] = date + dt
+    if roundTo is not None:
+        joined["valor"] = joined["valor"].round(roundTo)
     return joined[["series_id", "valor", "timestart", "timeend"]]
 
 def readDir(
@@ -128,17 +137,33 @@ def readDir(
         fuentes_id : int,
         var_id : int,
         dt: datetime.timedelta,
-        output : str = None,
+        output : Optional[str] = None,
         offset_hours : int = 0,
         upload : bool = False,
-        upload_batch : int = 2500):
+        upload_batch : int = 2500,
+        dates_file : Optional[str] = None,
+        roundTo : Optional[int] = None):
     series_areales : pandas.DataFrame = getSeries(fuentes_id, var_id)
     obs = [] # pandas.DataFrame(columns={"series_id": int, "valor": float, "timestart": datetime, "timeend": datetime})
-    files = os.listdir(dirname)
-    for file in files:
+    
+    if dates_file is not None:
+        df_dates = pandas.read_csv(dates_file, header=None, names=["time"])
+        dates = pandas.to_datetime(df_dates["time"])
+    else:
+        dates = None
+    
+    files = sorted(os.listdir(dirname))
+    for i, file in enumerate(files):
         filepath = "%s/%s" % (dirname, file)
         try:
-            rows = parseCSVFile(filepath, year, series_areales, dt, offset_hours)
+            rows = parseCSVFile(
+                filepath, 
+                year, 
+                series_areales, 
+                dt, 
+                offset_hours, 
+                dates[i] if dates is not None else None,
+                roundTo)
             obs.append(rows)
         except Exception as e:
             print(f"An error occurred: {type(e).__name__} – {e}")
@@ -182,8 +207,24 @@ def run(args : argparse.Namespace):
         is_tmpdir = False
     try:
         if not args.skip_grass_process:
-            zonalMeans(args.zones_file, args.cover_file, args.csvdir, args.coef, args.method)
-        readDir(args.csvdir, args.year, args.fuentes_id, args.var_id, args.dt, args.output, args.offset_hours, args.upload, args.upload_batch)
+            zonalMeans(
+                args.zones_file,
+                args.cover_file, 
+                args.csvdir, 
+                args.coef, 
+                args.method)
+        readDir(
+            args.csvdir, 
+            args.year, 
+            args.fuentes_id, 
+            args.var_id, 
+            args.dt, 
+            args.output, 
+            args.offset_hours, 
+            args.upload, 
+            args.upload_batch, 
+            args.dates_file,
+            args.round_to)
     finally:
         if is_tmpdir:
             # --- Clean up temporary directory ---
@@ -199,7 +240,7 @@ if __name__ == "__main__":
     parser.add_argument("-v","--var_id", type=int, default=defaults["var_id"])
     parser.add_argument("-D","--csvdir", type=str)
     parser.add_argument("-z","--zones_file", type=str, default=defaults["zones_file"])
-    parser.add_argument("-d","--dt", type=datetime.timedelta, default=defaults["dt"])
+    parser.add_argument("-d","--dt", type=isodate.parse_duration, default=defaults["dt"])
     parser.add_argument("-o","--offset_hours", type=int, default=defaults["offset_hours"])
     parser.add_argument("-c","--coef", type=float, default=defaults["coef"])
     parser.add_argument("-m","--method", type=str, default=defaults["method"])
@@ -210,6 +251,8 @@ if __name__ == "__main__":
     parser.add_argument("-p","--file_pattern", type=str, default=defaults["file_pattern"])
     parser.add_argument("-U","--a5_url", type=str, default=config["server"]["url"])
     parser.add_argument("-b","--upload_batch", type=int, default=defaults["upload_batch"])   
+    parser.add_argument("-a", "--dates_file", type=str)
+    parser.add_argument("-r","--round_to", type=int)
     args = parser.parse_args()
     client.url = args.a5_url
     if args.create_zones_map:
@@ -230,7 +273,7 @@ if __name__ == "__main__":
             print("Processing file %s, year %i" % (args.cover_file, args.year))
             run(args)
     else:
-        if args.year is None:
+        if args.year is None and args.dates_file is None:
             match = re.search(args.file_pattern, args.cover_file)
             if not match:
                 raise ValueError("Filename '%s' does not match pattern. Skipping" % args.cover_file)

@@ -9,3 +9,5 @@ data/estaciones_props.geojson
 tmp
 config
 data/WGS84
+__pycache__
+data
