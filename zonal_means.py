@@ -114,10 +114,11 @@ def parseCSVFile(
         filepath : str,
         year : int, 
         series_areales : pandas.DataFrame, 
-        dt : datetime.timedelta,
+        dt : Optional[datetime.timedelta]=None,
         offset_hours : int = 0,
         date : Optional[datetime.datetime]=None,
         roundTo : Optional[int]=None):
+    dt = dt if dt is not None else datetime.timedelta(days=0)
     print("parseando %s" % filepath)
     doy = int(filepath.split(".")[1])
     date = date or datetime.datetime(year,1,1, offset_hours) + datetime.timedelta(days=doy - 1)
@@ -134,17 +135,24 @@ def parseCSVFile(
 def readDir(
         dirname : str,
         year : int, 
-        fuentes_id : int,
-        var_id : int,
-        dt: datetime.timedelta,
+        fuentes_id : Optional[int]=None,
+        var_id : Optional[int]=None,
+        dt: Optional[datetime.timedelta]=datetime.timedelta(days=0),
         output : Optional[str] = None,
         offset_hours : int = 0,
         upload : bool = False,
         upload_batch : int = 2500,
         dates_file : Optional[str] = None,
         roundTo : Optional[int] = None,
-        cor_id : Optional[int] = None):
-    series_areales : pandas.DataFrame = getSeries(fuentes_id, var_id)
+        cor_id : Optional[int] = None,
+        series_file : Optional[str] = None):
+    if series_file is not None:
+        series_areales : pandas.DataFrame = pandas.read_json(series_file, orient="records")
+        series_areales.set_index("estacion_id", inplace=True)
+    else:
+        if var_id is None or fuentes_id is None:
+            raise ValueError("Missing var_id+fuentes_id or series_file")
+        series_areales : pandas.DataFrame = getSeries(fuentes_id, var_id)
     obs = [] # pandas.DataFrame(columns={"series_id": int, "valor": float, "timestart": datetime, "timeend": datetime})
     
     if dates_file is not None:
@@ -232,7 +240,8 @@ def run(args : argparse.Namespace):
             args.upload_batch, 
             args.dates_file,
             args.round_to,
-            args.cor_id)
+            args.cor_id,
+            args.series_file)
     finally:
         if is_tmpdir:
             # --- Clean up temporary directory ---
@@ -244,7 +253,7 @@ if __name__ == "__main__":
     parser.add_argument("cover_file", type=str)
     parser.add_argument("output", type=str)
     parser.add_argument("-y","--year", type=int)
-    parser.add_argument("-f","--fuentes_id", type=int, required=True)
+    parser.add_argument("-f","--fuentes_id", type=int)
     parser.add_argument("-v","--var_id", type=int, default=defaults["var_id"])
     parser.add_argument("-D","--csvdir", type=str)
     parser.add_argument("-z","--zones_file", type=str, default=defaults["zones_file"])
@@ -255,13 +264,14 @@ if __name__ == "__main__":
     parser.add_argument("-u","--upload",action="store_true")
     parser.add_argument("-S","--skip_grass_process",action="store_true")
     parser.add_argument("-Z","--create_zones_map",action="store_true")
-    parser.add_argument("--geom_file", type=str, default=defaults["geom_file"])
+    parser.add_argument("-g","--geom_file", type=str, default=defaults["geom_file"])
     parser.add_argument("-p","--file_pattern", type=str, default=defaults["file_pattern"])
     parser.add_argument("-U","--a5_url", type=str, default=config["server"]["url"])
     parser.add_argument("-b","--upload_batch", type=int, default=defaults["upload_batch"])   
     parser.add_argument("-a", "--dates_file", type=str)
     parser.add_argument("-r","--round_to", type=int)
     parser.add_argument("-C","--cor_id", type=int)
+    parser.add_argument("-s","--series_file", type=str)
     args = parser.parse_args()
     client.url = args.a5_url
     if args.create_zones_map:
