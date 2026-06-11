@@ -122,7 +122,7 @@ def parseCSVFile(
     print("parseando %s" % filepath)
     doy = int(filepath.split(".")[1])
     date = date or datetime.datetime(year,1,1, offset_hours) + datetime.timedelta(days=doy - 1)
-    data = pandas.read_csv(filepath)
+    data = pandas.read_csv(filepath, header=None)
     data.columns=["estacion_id","valor","cell_count"]
     data.set_index("estacion_id", inplace=True)
     joined = data.join(series_areales)

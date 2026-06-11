@@ -64,7 +64,7 @@ done
 : "${fuentes_id:?Missing -f FUENTES_ID}"
 : "${var_id:?Missing -v VAR_ID}"
 : "${dates_file:?Missing -d DATES_FILE}"
-: "${cor_id:?Missing -c COR_ID}"
+# : "${cor_id:?Missing -c COR_ID}"
 
 service="app"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -116,6 +116,11 @@ if [ -n "$SERIES_FILE" ]; then
     args+=(-s $SERIES_FILE)
 fi
 
+if [ -n "$COR_ID" ]; then
+    args+=(-C $COR_ID)
+fi
+
+
 mapset=session_$(date +%s)
 
 echo "--- Creating mapset: $mapset"
@@ -123,7 +128,7 @@ grass "$LOCATION/PERMANENT" --exec g.mapset -c mapset="$mapset"
 echo "--- Processing file: $COVER_FILE"
 # echo "grass $LOCATION/$mapset --exec /opt/venv/bin/python zonal_means.py $COVER_FILE $OUTPUT -f $FUENTES_ID -v $VAR_ID -c $COEF -z $ZONES_FILE -d $DT -r $ROUND_TO -a $DATES_FILE -C $COR_ID ${args[@]}"
 grass "$LOCATION/$mapset" --exec /opt/venv/bin/python zonal_means.py \
-    "$COVER_FILE" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "$COEF" -z "$ZONES_FILE" -d "$DT" -r "$ROUND_TO" -a "$DATES_FILE" -C "$COR_ID" "${args[@]}"
+    "$COVER_FILE" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "$COEF" -z "$ZONES_FILE" -d "$DT" -r "$ROUND_TO" -a "$DATES_FILE" "${args[@]}"
 
 echo "--- Deleting mapset: $mapset"
 rm -rf "$LOCATION/$mapset"
