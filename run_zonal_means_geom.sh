@@ -35,10 +35,11 @@ usage() {
     echo "  -g VECTOR_ZONES_FILE"
     echo "  -u"
     echo "  -s SERIES_FILE"
+    echo "  -l LOCATION (default: ZONALMEANS)"
     exit 1
 }
 
-while getopts ":c:o:f:v:k:z:g:d:r:t:i:uhs:" opt; do
+while getopts ":c:o:f:v:k:z:g:d:r:t:i:uhs:l:" opt; do
     case "$opt" in
         c) cover_file="$OPTARG" ;;
         o) output="$OPTARG" ;;
@@ -53,6 +54,7 @@ while getopts ":c:o:f:v:k:z:g:d:r:t:i:uhs:" opt; do
         i) cor_id="$OPTARG" ;;
         u) upload=true ;;
         s) series_file="$OPTARG" ;;
+        l) location="$OPTARG" ;;
         h) usage ;;
         *) usage ;;
     esac
@@ -68,7 +70,7 @@ done
 
 service="app"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-location="data/ZONALMEANS"
+location=${location:-data/ZONALMEANS} # data/WRF
 wdir=$(dirname "$output")
 cover_file="/work/$(basename "$cover_file")"
 output="/work/$(basename "$output")"

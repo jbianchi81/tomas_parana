@@ -46,8 +46,9 @@ def createZonesMap(geom_output : str, zones_file : str, filter: dict={}):
     except subprocess.CalledProcessError as e:
         raise e
 
-def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, method: str):
+def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, method: str, new_location: Optional[str]=None):
     import grass.script as gs
+    # import grass.script.setup as gsetup
 
     os.environ["GRASS_VERBOSE"] = "-1"
 
@@ -63,6 +64,24 @@ def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, met
     # Convert to int and mask out 0
     gs.run_command("r.mapcalc", expression="areas = int( areas_pluvio )", overwrite=True)
     gs.run_command("r.null", map="areas", setnull=0)
+
+    # if new_location is not None:
+
+    #     grassdb = gs.gisenv()["GISDBASE"]
+
+    #     # Create a location directly from the raster's CRS
+    #     gs.create_location(
+    #         dbase=grassdb,
+    #         location=new_location,
+    #         filename=cover_file,
+    #     )
+
+    #     # Initialize GRASS in the new location
+    #     gsetup.init(
+    #         grassdb,
+    #         new_location,
+    #         "PERMANENT",
+    #     )
 
     # --- Remove old cover files ---
     gs.run_command("g.remove",type="raster",pattern="cover.*",flags="f")
