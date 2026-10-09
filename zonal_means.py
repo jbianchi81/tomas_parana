@@ -55,11 +55,18 @@ def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, met
     # Ensure output directory exists
     os.makedirs(csvdir, exist_ok=True)
 
-    # --- Define region ---
-    gs.run_command("g.region", n=-10, s=-40, e=-40, w=-70, res=0.05)
-
     # --- Load zones raster ---
     gs.run_command("r.in.gdal", input=zones_file, output="areas_pluvio", overwrite=True, flags="o")
+
+    # --- Remove old cover files ---
+    gs.run_command("g.remove",type="raster",pattern="cover.*",flags="f")
+
+    # --- Load cover raster (multiband) ---
+    gs.run_command("r.in.gdal", input=cover_file, output="cover", overwrite=True, flags="o")
+
+    # --- Define region ---
+    # gs.run_command("g.region", n=-10, s=-40, e=-40, w=-70, res=0.05)
+    gs.run_command("g.region", raster="cover.1")
 
     # Convert to int and mask out 0
     gs.run_command("r.mapcalc", expression="areas = int( areas_pluvio )", overwrite=True)
@@ -82,12 +89,6 @@ def zonalMeans(zones_file : str, cover_file : str, csvdir : str, coef : int, met
     #         new_location,
     #         "PERMANENT",
     #     )
-
-    # --- Remove old cover files ---
-    gs.run_command("g.remove",type="raster",pattern="cover.*",flags="f")
-
-    # --- Load cover raster (multiband) ---
-    gs.run_command("r.in.gdal", input=cover_file, output="cover", overwrite=True, flags="o")
 
     # --- Iterate over each band ---
     cover_maps = gs.list_grouped("raster", pattern="cover.*")[gs.gisenv()["MAPSET"]]

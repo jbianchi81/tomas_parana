@@ -17,7 +17,7 @@ upload=false
 series_file=""
 
 usage() {
-    echo "Usage: $0 -c <cover_file> -o <output> -g <vector_zones_file> -z <raster_zones_file> -t <dates_file> -o <cor_id> -f <fuentes_id> -v <var_id> [options]"
+    echo "Usage: $0 -c <cover_file> -o <output> -g <vector_zones_file> -z <raster_zones_file> -t <dates_file> -o <cor_id> -f <fuentes_id> -v <var_id> -l <location> [options]"
     echo
     echo "Required:"
     echo "  -c COVER_FILE"
@@ -128,7 +128,7 @@ mapset=session_$(date +%s)
 echo "--- Creating mapset: $mapset"
 grass "$LOCATION/PERMANENT" --exec g.mapset -c mapset="$mapset"
 echo "--- Processing file: $COVER_FILE"
-# echo "grass $LOCATION/$mapset --exec /opt/venv/bin/python zonal_means.py $COVER_FILE $OUTPUT -f $FUENTES_ID -v $VAR_ID -c $COEF -z $ZONES_FILE -d $DT -r $ROUND_TO -a $DATES_FILE -C $COR_ID ${args[@]}"
+echo "grass $LOCATION/$mapset --exec /opt/venv/bin/python zonal_means.py $COVER_FILE $OUTPUT -f $FUENTES_ID -v $VAR_ID -c $COEF -z $ZONES_FILE -d $DT -r $ROUND_TO -a $DATES_FILE -C $COR_ID ${args[@]}"
 grass "$LOCATION/$mapset" --exec /opt/venv/bin/python zonal_means.py \
     "$COVER_FILE" "$OUTPUT" -f "$FUENTES_ID" -v "$VAR_ID" -c "$COEF" -z "$ZONES_FILE" -d "$DT" -r "$ROUND_TO" -a "$DATES_FILE" "${args[@]}"
 
