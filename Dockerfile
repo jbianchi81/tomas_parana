@@ -65,5 +65,6 @@ RUN python --version && pip list
 
 WORKDIR /
 COPY zonal_means.py .
+COPY probability_exceedance.py .
 
 CMD [ "bash" ]
