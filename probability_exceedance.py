@@ -77,6 +77,26 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Don't delete temporary GRASS maps.",
     )
+    parser.add_argument(
+        "--forecast-date",
+        type=str,
+        help="forecast date",
+    )
+    parser.add_argument(
+        "--timestart",
+        type=str,
+        help="timestart",
+    )
+    parser.add_argument(
+        "--timeend",
+        type=str,
+        help="timeend",
+    )
+    parser.add_argument(
+        "--product",
+        type=str,
+        help="product"
+    )
     return parser.parse_args()
 
 
@@ -97,7 +117,8 @@ def export_png(
         output_path: Path, 
         overwrite: bool, 
         category_cuts : list=list(DEFAULT_CATEGORY_CUTS),
-        title : str="Prob") -> None:
+        title : str="Prob",
+        metadata : dict={}) -> None:
     gs.run_command(
         "d.mon",
         start="cairo",
@@ -106,8 +127,22 @@ def export_png(
     )
     try:
         gs.run_command("d.rast", map=output_map)
-        gs.run_command("d.legend",raster=output_map,label_values=",".join([str(c) for c in category_cuts]))
-        gs.run_command("d.text",text=title,color="black")
+        gs.run_command("d.vect",map="sa_limites_administrativos@PERMANENT",type="boundary")
+        gs.run_command("d.vect",map="cdp@PERMANENT",type="boundary", width=2)
+        gs.run_command("d.grid",size="05:00:00")
+        gs.run_command("d.legend",raster="prob_fullrange@PERMANENT",label_values=",".join([str(c) for c in category_cuts]))
+        gs.run_command("d.text",text=title,color="black", size=4)
+        textline=2
+        if "forecast_date" in metadata and metadata["forecast_date"] is not None:
+            gs.run_command("d.text",text="Emision: %s" % metadata["forecast_date"],color="black", line=textline, size=3)
+            textline = textline + 1
+        if "timestart" in metadata and "timeend" in metadata and metadata["timestart"] is not None and metadata["timeend"] is not None:
+            gs.run_command("d.text",text="%s a %s" % (metadata["timestart"], metadata["timeend"]),color="black", line=textline, size=3)
+            textline = textline + 1
+        # for key in metadata.keys():
+        #     if metadata[key] is not None:
+        #         gs.run_command("d.text",text="%s: %s" % (key, metadata[key]),color="black", line=textline)
+        #         textline = textline + 1
     finally:
         gs.run_command("d.mon", stop="cairo")
 
@@ -224,7 +259,12 @@ def main() -> None:
                     png_path, 
                     args.overwrite, 
                     args.category_cuts,
-                    "Prob. (PP>%02d mm)" % threshold
+                    "Prob. (PP>%02d mm) n=%d %s" % (threshold, len(input_files), args.product if args.product is not None else ""),
+                    {
+                        "forecast_date": args.forecast_date,
+                        "timestart": args.timestart,
+                        "timeend": args.timeend
+                    }
                 )
             print(f"Created {output_map} for threshold {threshold:g}")
     finally:

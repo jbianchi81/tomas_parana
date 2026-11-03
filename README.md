@@ -62,6 +62,29 @@ grass <GISDBASE>/<LOCATION>/<MAPSET> --exec \
   --png-output-dir data/probability_exceedance/png
 ```
 
+Para ejecutarlo dentro del contenedor con un mapset temporal:
+
+```bash
+./run_probability_exceedance.sh \
+  "data/ensemble/member_*.tif" \
+  --thresholds 50 100 \
+  --output-prefix prob \
+  --gdal-output-dir data/probability_exceedance/geotiff \
+  --png-output-dir data/probability_exceedance/png
+```
+
+```bash
+./run_probability_exceedance.sh \
+  "data/gefs_atmos/members/sum-*.GTiff" \
+  --output-prefix prob \
+  --gdal-output-dir data/probability_exceedance/geotiff \
+  --png-output-dir data/probability_exceedance/png \
+  --overwrite
+```
+
+La LOCATION predeterminada es `data/CDPG`; se puede cambiar con `-l`.
+Los demas argumentos se pasan directamente a `probability_exceedance.py`.
+
 Los mapas GRASS y GeoTIFF se llaman `prob_exceed_50` y `prob_exceed_100`.
 La exportacion PNG es opcional; omita `--png-output-dir` para desactivarla.
 Use `--category-cuts CUT1 CUT2 CUT3 CUT4` para cambiar los cuatro cortes, o
