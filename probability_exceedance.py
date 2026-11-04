@@ -113,7 +113,7 @@ def category_expression(
 
 def export_png(
         gs: Any, 
-        output_map: str, 
+        final_map: str, 
         output_path: Path, 
         overwrite: bool, 
         category_cuts : list=list(DEFAULT_CATEGORY_CUTS),
@@ -126,7 +126,7 @@ def export_png(
         overwrite=overwrite,
     )
     try:
-        gs.run_command("d.rast", map=output_map)
+        gs.run_command("d.rast", map=final_map)
         gs.run_command("d.vect",map="sa_limites_administrativos@PERMANENT",type="boundary")
         gs.run_command("d.vect",map="cdp@PERMANENT",type="boundary", width=2)
         gs.run_command("d.grid",size="05:00:00")
@@ -149,8 +149,8 @@ def export_png(
 
 def main() -> None:
     args = parse_args()
-    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_]*", args.output_prefix):
-        raise ValueError("Output prefix must start with a letter and contain only letters, digits, or underscores.")
+    if not re.fullmatch(r"[A-Za-z][A-Za-z0-9_.-]*", args.output_prefix):
+        raise ValueError("Output prefix (%s) must start with a letter and contain only letters, digits, points, dashes or underscores." % args.output_prefix)
     if not args.thresholds or any(not math.isfinite(value) for value in args.thresholds):
         raise ValueError("Thresholds must be finite numeric values.")
     if len(set(args.thresholds)) != len(args.thresholds):
@@ -203,6 +203,7 @@ def main() -> None:
         for threshold, output_map in zip(args.thresholds, output_names):
             valid_map = f"valid_{run_id}_{threshold_tag(threshold)}"
             exceed_map = f"exceed_{run_id}_{threshold_tag(threshold)}"
+            final_map = f"final_{run_id}_{threshold_tag(threshold)}"
 
             valid_terms = [
                 f"if(isnull({raster_map}), 0, 1)" for raster_map in member_maps
@@ -222,14 +223,14 @@ def main() -> None:
             )
             temporary_maps.append(exceed_map)
             gs.mapcalc(
-                f"{output_map} = if({valid_map} > 0, "
+                f"{final_map} = if({valid_map} > 0, "
                 f"100.0 * {exceed_map} / {valid_map}, null())",
                 overwrite=args.overwrite,
             )
             # class_map = f"class_{run_id}_{threshold_tag(threshold)}"
             # gs.mapcalc(
             #     category_expression(
-            #         output_map,
+            #         final_map,
             #         class_map,
             #         list(args.category_cuts),
             #     ),
@@ -238,13 +239,13 @@ def main() -> None:
             # temporary_maps.append(class_map)
             gs.run_command(
                 "r.colors",
-                map=output_map,
+                map=final_map,
                 rules=str(args.color_rules),
             )
             gdal_path = args.gdal_output_dir / f"{output_map}.tif"
             gs.run_command(
                 "r.out.gdal",
-                input=output_map,
+                input=final_map,
                 output=str(gdal_path),
                 format="GTiff",
                 type="Float32",
@@ -255,7 +256,7 @@ def main() -> None:
                 png_path = args.png_output_dir / f"{output_map}.png"
                 export_png(
                     gs, 
-                    output_map, 
+                    final_map, 
                     png_path, 
                     args.overwrite, 
                     args.category_cuts,
