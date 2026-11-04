@@ -130,7 +130,7 @@ def export_png(
         gs.run_command("d.vect",map="sa_limites_administrativos@PERMANENT",type="boundary")
         gs.run_command("d.vect",map="cdp@PERMANENT",type="boundary", width=2)
         gs.run_command("d.grid",size="05:00:00")
-        gs.run_command("d.legend",raster="prob_fullrange@PERMANENT",label_values=",".join([str(c) for c in category_cuts]))
+        gs.run_command("d.legend",raster="fullrange_legend_map",label_values=",".join([str(c) for c in category_cuts]))
         gs.run_command("d.text",text=title,color="black", size=4)
         textline=2
         if "forecast_date" in metadata and metadata["forecast_date"] is not None:
@@ -145,6 +145,14 @@ def export_png(
         #         textline = textline + 1
     finally:
         gs.run_command("d.mon", stop="cairo")
+
+def create_legend_map(gs, color_rules):
+    gs.mapcalc(
+        "fullrange_legend_map = rand(0.0, 99.9)", 
+        seed=12345, 
+        overwrite=True
+    )
+    gs.run_command("r.colors", map="fullrange_legend_map", rules=color_rules)
 
 
 def main() -> None:
@@ -187,6 +195,7 @@ def main() -> None:
     member_maps = [f"ens_{run_id}_{index:05d}" for index in range(len(input_files))]
     temporary_maps: list[str] = []
 
+
     try:
         for filepath, raster_map in zip(input_files, member_maps):
             print(f"Importing {filepath} as {raster_map}")
@@ -199,6 +208,7 @@ def main() -> None:
             temporary_maps.append(raster_map)
 
         gs.run_command("g.region", raster=member_maps[0])
+        create_legend_map(gs, args.color_rules)
 
         for threshold, output_map in zip(args.thresholds, output_names):
             valid_map = f"valid_{run_id}_{threshold_tag(threshold)}"
