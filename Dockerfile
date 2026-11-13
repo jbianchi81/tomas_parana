@@ -63,8 +63,27 @@ RUN grass --version
 # Verify environment
 RUN python --version && pip list
 
+# instala wgrib y grads
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    make \
+    wget \
+    grads \
+    libc6-dev \
+    cpanminus \
+    && cpanm --notest Math::Trig \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /src/wgrib
+RUN wget https://ftp.cpc.ncep.noaa.gov/tools/wgrib/wgrib.tar
+RUN tar -xf wgrib.tar
+RUN make
+RUN install -m 755 wgrib /usr/local/bin/wgrib
+
 WORKDIR /
 COPY zonal_means.py .
 COPY probability_exceedance.py .
+COPY grib2ctl.pl .
+COPY agrega_cosmo.py .
+COPY commands.grads .
 
 CMD [ "bash" ]

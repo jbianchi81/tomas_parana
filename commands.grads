@@ -1,0 +1,5 @@
+'open sample.ctl'
+'set geotiff sample.tif'
+'set gxout geotiff'
+'d apcpsfc'
+'quit'
