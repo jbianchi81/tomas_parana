@@ -30,8 +30,11 @@ def main() -> None:
     month = args.emision[4:6]
 
     HOST = Path(args.host, year, month)
-    HOST_3H = Path(args.host_3h)
-    HOST_1D = Path(args.host_1d)
+    HOST_3H = Path(args.host_3h, year, month)
+    HOST_1D = Path(args.host_1d, year, month)
+
+    HOST_3H.mkdir(parents=True, exist_ok=True)
+    HOST_1D.mkdir(parents=True, exist_ok=True)
 
     print("host: %s" % HOST)
     print("emision: %s" % args.emision)
