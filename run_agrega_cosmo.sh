@@ -95,6 +95,11 @@ service="app"
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 mapset="session_$(date +%s)"
 
+echo "host=$host"
+echo "host_3h=$host_3h"
+echo "host_1d=$host_1d"
+echo "script_dir=$script_dir"
+
 docker compose \
     --project-directory "$script_dir" \
     run --rm -T \

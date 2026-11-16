@@ -7,8 +7,20 @@ import re
 import sys
 import tempfile
 import subprocess
+from typing import List
 
 import grass.script as gs
+
+def date_from_yyyymmddhh(s):
+    return datetime.datetime.strptime(s, '%Y%m%d%H').replace(tzinfo=datetime.timezone.utc)
+
+def date_range(start : datetime.datetime, end : datetime.datetime, step_hours=3, offset_hours=0):
+    d = start + datetime.timedelta(hours=offset_hours)
+    result : List[datetime.datetime]= []
+    while d <= end:
+        result.append(d)
+        d += datetime.timedelta(hours=step_hours)
+    return result
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -45,10 +57,23 @@ def main() -> None:
         name
         for name in os.listdir(HOST)
         if f"PLATA_{args.emision}{args.inicializacion}" in name
-        and re.match(r".*\.grb$", name)
+        and re.match(r".*_\d{10}\.grb$", name)
     )
 
-    for file in files:
+    start_date = date_from_yyyymmddhh(f"{args.emision}{args.inicializacion}")
+    end_date = start_date + datetime.timedelta(hours=174)
+    
+    timestamps = [d for d in date_range(start_date, end_date, 3, 2)]
+    
+    expected_files = [f"PLATA_{args.emision}{args.inicializacion}_{d.strftime('%Y%m%d%H')}.grb" for d in timestamps]
+
+    tif_files = []
+
+    for file in expected_files:
+
+        if not Path(HOST, file).is_file():
+            raise ValueError("No se encontró el archivo %s" % file)
+
         out = file.replace(".grb",".tif")
         result = subprocess.run(["cp", Path(HOST, file), "sample.grb"], check=True)
         if result.returncode != 0:
@@ -60,42 +85,60 @@ def main() -> None:
         subprocess.run(["gribmap", "-i", "sample.ctl"], check=False)        
         subprocess.run(["grads", "-bpcx", "run commands.grads"], check=False)
         subprocess.run(["cp", "sample.tif", Path(tmpdir, out)], check=True)
+        tif_files.append(out)
 
     gs.mapcalc("prev_3h = 0", overwrite=True)
     gs.mapcalc("prev_d = 0", overwrite=True)
 
-    step_3h = 3
-    step_diario = 36
+    # step_3h = 3
+    # step_diario = 12
 
-    tif_files = sorted(
-        name
-        for name in os.listdir(tmpdir)
-        if f"PLATA_{args.emision}{args.inicializacion}" in name
-    )
+    # tif_files = sorted(
+    #     name
+    #     for name in os.listdir(tmpdir)
+    #     if f"PLATA_{args.emision}{args.inicializacion}" in name
+    # )
 
-    for index, raster in enumerate(tif_files, start=1):
-        if index == step_3h:
-            print("Importando %s" % Path(tmpdir, raster))
-            gs.run_command(
-                "r.in.gdal",
-                input=Path(tmpdir, raster),
-                output=raster,
-                overwrite=True,
-            )
-            gs.run_command("g.region", raster=raster)
-            gs.run_command("r.null", map=raster, setnull="-9.99e+08")
-            gs.mapcalc(f"acum_3h = {raster} - prev_3h", overwrite=True)
-            gs.mapcalc(f"prev_3h = {raster}", overwrite=True)
-            gs.run_command(
-                "r.out.gdal",
-                input="acum_3h",
-                output=str(HOST_3H / raster),
-                overwrite=True,
-                nodata=args.nodata,
-            )
-            step_3h += 3
+    files_3h = []
+    files_1d = []
 
-            if index >= args.cut_diario and index == step_diario:
+    for index, raster in enumerate(tif_files, start=0):
+        timestamp = timestamps[index]
+        print("timestamp: %s" % timestamp.strftime('%Y%m%d%H'))
+        forecast_time = timestamp - start_date
+        forecast_hours = int((forecast_time).seconds / 3600 + forecast_time.days * 24)
+
+        # if index == step_3h:
+        print("Importando %s" % Path(tmpdir, raster))
+        gs.run_command(
+            "r.in.gdal",
+            input=Path(tmpdir, raster),
+            output=raster,
+            overwrite=True,
+        )
+        gs.run_command("g.region", raster=raster)
+        gs.run_command("r.null", map=raster, setnull="-9.99e+08")
+        gs.mapcalc(f"acum_3h = {raster} - prev_3h", overwrite=True)
+        gs.mapcalc(f"prev_3h = {raster}", overwrite=True)
+        gs.run_command(
+            "r.out.gdal",
+            input="acum_3h",
+            output=str(HOST_3H / raster),
+            overwrite=True,
+            nodata=args.nodata,
+        )
+        files_3h.append(raster)
+        # step_3h += 3
+
+        if timestamp.hour == 11:
+            print("acum diario")
+            # if index == step_diario:
+            if forecast_hours <= args.cut_diario:
+                print("bajo el cut_diario")
+                # if index <= args.cut_diario:
+                gs.mapcalc(f"prev_d = {raster}", overwrite=True)
+            else:
+                print("Genera acum diario")
                 gs.mapcalc(f"acum_diario = {raster} - prev_d", overwrite=True)
                 gs.mapcalc(f"prev_d = {raster}", overwrite=True)
                 gs.run_command(
@@ -105,10 +148,16 @@ def main() -> None:
                     overwrite=True,
                     nodata=args.nodata,
                 )
-                step_diario += 24
+                files_1d.append(raster)
 
-            gs.run_command("g.remove", type="raster", name=raster, flags="f")
+        gs.run_command("g.remove", type="raster", name=raster, flags="f")
 
+    with open(Path(HOST_3H, "index.csv"), "w") as f:
+        f.write("\n".join(files_3h))
+        f.close()
+    with open(Path(HOST_1D, "index.csv"), "w") as f:
+        f.write("\n".join(files_1d))
+        f.close()
 
 if __name__ == "__main__":
     main()
