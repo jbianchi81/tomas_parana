@@ -70,9 +70,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     grads \
     libc6-dev \
-    cpanminus \
-    && cpanm --notest Math::Trig \
-    && rm -rf /var/lib/apt/lists/*
+    cpanminus
+RUN cpanm --mirror https://www.cpan.org --mirror-only --notest Math::Trig && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /src/wgrib
 RUN wget https://ftp.cpc.ncep.noaa.gov/tools/wgrib/wgrib.tar
 RUN tar -xf wgrib.tar
