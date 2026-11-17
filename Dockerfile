@@ -82,6 +82,7 @@ RUN install -m 755 wgrib /usr/local/bin/wgrib
 WORKDIR /
 COPY zonal_means.py .
 COPY probability_exceedance.py .
+COPY match.py .
 COPY grib2ctl.pl .
 COPY agrega_cosmo.py .
 COPY commands.grads .

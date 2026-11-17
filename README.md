@@ -91,3 +91,35 @@ Use `--category-cuts CUT1 CUT2 CUT3 CUT4` para cambiar los cuatro cortes, o
 `--color-rules PATH` para aplicar otro archivo `r.colors` con cinco colores
 de categoria. Agregar `--overwrite` permite reemplazar mapas y archivos de
 salida existentes.
+
+## Mapa de coincidencias QPF en GRASS GIS
+
+Con un mapset de GRASS activo, `match.py` importa dos GeoTIFF, calcula las
+areas donde ambos superan cada corte (0, 10, 50, 80 y 100) y exporta el mapa
+final. Las entradas son argumentos posicionales opcionales; los valores
+predeterminados son `data/match/input_1.tif` y `data/match/input_2.tif`.
+
+```bash
+grass <GISDBASE>/<LOCATION>/<MAPSET> --exec \
+  python match.py data/match/input_1.tif data/match/input_2.tif \
+  --resolution 0.07 \
+  --window-size 7 \
+  --fuzzy-threshold 0.5 \
+  --title "Match QPF INA (COSMO+GFS)" \
+  --output data/match/DangerMap.tif
+```
+
+Para ejecutarlo dentro del contenedor con un mapset temporal:
+
+```bash
+./run_match.sh data/match/input_1.tif data/match/input_2.tif \
+  --resolution 0.07 \
+  --window-size 7 \
+  --fuzzy-threshold 0.5 \
+  --output data/match/DangerMap.tif
+```
+
+El wrapper usa `data/CDPG` por defecto; `-l LOCATION` permite elegir otra
+LOCATION. El programa exporta tambien una capa GeoJSON por cada corte junto
+al GeoTIFF. La region se establece entre -45 y -14 de latitud, y entre -70 y
+-40 de longitud.
