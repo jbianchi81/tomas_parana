@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 
 
-THRESHOLDS = (0, 10, 50, 80, 100)
+THRESHOLDS = (10, 50, 80, 100)
 
 
 def parse_args() -> argparse.Namespace:
@@ -163,6 +163,7 @@ def main() -> None:
         except CalledModuleError:
             print("Problema al exportar GeoJSON.", file=sys.stderr)
 
+
     gs.run_command(
         "r.patch",
         input=",".join(f"TNeig_{threshold}" for threshold in reversed(args.thresholds)),
@@ -206,6 +207,7 @@ def main() -> None:
         output=args.output,
         format="GTiff",
         type="UInt16",
+        nodata=0,
         overwrite=True,
     )
 
